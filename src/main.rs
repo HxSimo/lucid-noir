@@ -1,4 +1,5 @@
 use fm::{FileId, FileManager};
+use lucid_noir::core::entry_point::find_entry_point;
 use std::{collections::HashMap, fs::File, path::Path};
 use walkdir::WalkDir;
 
@@ -18,9 +19,13 @@ fn main() {
         File::create("lucid_noir.log").unwrap(),
     )
     .unwrap();
+
+    // TODO: make those variables configurable
     let project_root = "noir/src/";
-    let project_root_path = Path::new("noir/src/");
-    let entry_file = Path::new("noir/src/main.nr");
+    let project_root_path = Path::new(project_root);
+    let entry_path_str = format!("{}main.nr", project_root);
+    let entry_file = Path::new(&entry_path_str);
+    let entry_point_name = "main";
 
     let fm = setup_fm_from_path(project_root_path);
     let file_id = fm
@@ -44,7 +49,7 @@ fn main() {
         }
     }
 
-    let _parsed_module: &ParsedModule = &parsed_files[&file_id].0.clone();
+    let parsed_module: &ParsedModule = &parsed_files[&file_id].0.clone();
 
     if let Err(err) = compile_circuit(entry_file, fm, parsed_files) {
         panic!("❌ Compilation error:\n{err:?}");
@@ -52,6 +57,8 @@ fn main() {
         println!("✅ Compilation successful.");
     }
 
+    let _entry_point_fn = find_entry_point(parsed_module, &entry_point_name.to_string())
+        .unwrap_or_else(|| panic!("Entrypoint function '{}' not found", entry_point_name));
 }
 
 fn setup_fm_from_path(project_root: &Path) -> FileManager {
