@@ -4,3 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+argh = "0.1.13"
+noirc_driver = { git = "https://github.com/noir-lang/noir", package = "noirc_driver" }
+noirc_frontend = { git = "https://github.com/noir-lang/noir", package = "noirc_frontend" }
+noirc_errors = { git = "https://github.com/noir-lang/noir", package = "noirc_errors" }
+fm = { git = "https://github.com/noir-lang/noir", package = "fm" }
+petgraph = "0.8.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+simplelog = "0.12.2"
+log = "0.4.27"
+acvm = "0.46.0"
+walkdir = "2.5.0"
