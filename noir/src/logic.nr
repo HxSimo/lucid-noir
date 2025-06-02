@@ -1,0 +1,1 @@
+pub global LOGIC: Field = 1;
