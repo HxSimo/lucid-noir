@@ -6,10 +6,15 @@ use walkdir::WalkDir;
 use log::{LevelFilter, info};
 use simplelog::{Config, WriteLogger};
 
-use noirc_driver::{CompileOptions, compile_main, file_manager_with_stdlib, prepare_crate};
+use noirc_driver::{
+    CompileOptions, compile_main, file_manager_with_stdlib, prepare_crate,
+};
 use noirc_frontend::{
     ParsedModule,
-    hir::{Context, def_map::parse_file},
+    hir::{
+        Context,
+        def_map::parse_file,
+    },
 };
 
 fn main() {
@@ -28,7 +33,7 @@ fn main() {
     let entry_point_name = "main";
 
     let fm = setup_fm_from_path(project_root_path);
-    let file_id = fm
+    let entry_file_id = fm
         .name_to_id(entry_file.to_path_buf())
         .expect(&format!("{:?} not find in fileId", entry_file));
 
@@ -49,7 +54,7 @@ fn main() {
         }
     }
 
-    let parsed_module: &ParsedModule = &parsed_files[&file_id].0.clone();
+    let parsed_module: &ParsedModule = &parsed_files[&entry_file_id].0.clone();
 
     if let Err(err) = compile_circuit(entry_file, fm, parsed_files) {
         panic!("❌ Compilation error:\n{err:?}");
@@ -94,6 +99,28 @@ fn compile_circuit(
         println!("⚠️ Warnings:");
         for diag in warnings {
             println!("- {}", diag.message);
+        }
+    }
+
+    println!("✅ def_maps length: {}", context.def_maps.len());
+    for (crate_id, def_map) in &context.def_maps {
+        if !crate_id.is_stdlib() {
+            println!("📦 Crate: {:?}", crate_id);
+            println!("  - Number of modules: {}", def_map.modules().vec.len());
+
+            for (local_mod_id, module_data) in def_map.modules().iter() {
+                println!("    • Module {:?}:", local_mod_id);
+                println!("      - Parent: {:?}", module_data.parent);
+                println!("      - Children: {:?}", module_data.children);
+                println!("      - Scope items:");
+                for values in module_data.scope().values() {
+                    for value in values.1 {
+                        if value.1.2 == false {
+                            println!("      - Name: {:?}", values);
+                        }
+                    }
+                }
+            }
         }
     }
 
