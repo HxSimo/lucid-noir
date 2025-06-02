@@ -1,20 +1,15 @@
 use fm::{FileId, FileManager};
-use lucid_noir::core::entry_point::find_entry_point;
+use lucid_noir::core::{entry_point::find_entry_point, resolver::mod_resolver::{resolve_mods}};
 use std::{collections::HashMap, fs::File, path::Path};
 use walkdir::WalkDir;
 
 use log::{LevelFilter, info};
 use simplelog::{Config, WriteLogger};
 
-use noirc_driver::{
-    CompileOptions, compile_main, file_manager_with_stdlib, prepare_crate,
-};
+use noirc_driver::{CompileOptions, compile_main, file_manager_with_stdlib, prepare_crate};
 use noirc_frontend::{
     ParsedModule,
-    hir::{
-        Context,
-        def_map::parse_file,
-    },
+    hir::{Context, def_map::parse_file},
 };
 
 fn main() {
@@ -56,10 +51,19 @@ fn main() {
 
     let parsed_module: &ParsedModule = &parsed_files[&entry_file_id].0.clone();
 
-    if let Err(err) = compile_circuit(entry_file, fm, parsed_files) {
-        panic!("❌ Compilation error:\n{err:?}");
-    } else {
-        println!("✅ Compilation successful.");
+    let context = match compile_circuit(entry_file, fm, parsed_files) {
+        Ok(ctx) => {
+            println!("✅ Compilation successful.");
+            ctx
+        }
+        Err(err) => {
+            panic!("❌ Compilation error:\n{err:?}");
+        }
+    };
+
+    let modules = resolve_mods(&context);
+    for module in modules {
+        info!("{}", module);
     }
 
     let _entry_point_fn = find_entry_point(parsed_module, &entry_point_name.to_string())
@@ -88,7 +92,7 @@ fn compile_circuit(
     entry_file: &Path,
     fm: FileManager,
     parsed_files: HashMap<FileId, (ParsedModule, Vec<noirc_frontend::parser::ParserError>)>,
-) -> Result<(), noirc_driver::ErrorsAndWarnings> {
+) -> Result<Context, noirc_driver::ErrorsAndWarnings> {
     let mut context = Context::new(fm, parsed_files);
     let crate_id = prepare_crate(&mut context, entry_file);
 
@@ -102,27 +106,5 @@ fn compile_circuit(
         }
     }
 
-    println!("✅ def_maps length: {}", context.def_maps.len());
-    for (crate_id, def_map) in &context.def_maps {
-        if !crate_id.is_stdlib() {
-            println!("📦 Crate: {:?}", crate_id);
-            println!("  - Number of modules: {}", def_map.modules().vec.len());
-
-            for (local_mod_id, module_data) in def_map.modules().iter() {
-                println!("    • Module {:?}:", local_mod_id);
-                println!("      - Parent: {:?}", module_data.parent);
-                println!("      - Children: {:?}", module_data.children);
-                println!("      - Scope items:");
-                for values in module_data.scope().values() {
-                    for value in values.1 {
-                        if value.1.2 == false {
-                            println!("      - Name: {:?}", values);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    Ok(())
+    Ok(context)
 }
