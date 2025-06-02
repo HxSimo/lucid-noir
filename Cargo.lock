@@ -1737,6 +1737,7 @@ dependencies = [
  "argh",
  "fm",
  "log",
+ "noirc_arena",
  "noirc_driver",
  "noirc_errors",
  "noirc_frontend",
