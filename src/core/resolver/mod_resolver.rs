@@ -2,6 +2,7 @@ use std::{collections::HashMap, fmt};
 
 use fm::FileId;
 use noirc_arena::Index;
+use noirc_errors::Location;
 use noirc_frontend::{
     ast::{Ident, ItemVisibility},
     hir::{
@@ -29,7 +30,7 @@ pub struct DefinitionInfo {
     def_id: ModuleDefId,
     visibility: ItemVisibility,
     is_prelude: bool,
-    file: FileId,
+    location: Location
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -103,7 +104,7 @@ impl DefinitionInfo {
         def_id: ModuleDefId,
         visibility: ItemVisibility,
         is_prelude: bool,
-        file: FileId,
+        location: Location,
     ) -> Self {
         Self {
             name: name.into(),
@@ -111,7 +112,7 @@ impl DefinitionInfo {
             def_id,
             visibility,
             is_prelude,
-            file,
+            location,
         }
     }
 
@@ -126,14 +127,14 @@ impl DefinitionInfo {
                 other => panic!("Unhandled ModuleDefId variant: {other:?}"),
             };
             let is_prelude = is_prelude;
-            let file = ident.location().file;
+            let location = ident.location();
             Self {
                 name: name.into(),
                 kind,
                 def_id: *def_id,
                 visibility: *visibility,
                 is_prelude: *is_prelude,
-                file,
+                location,
             }
         } else {
             panic!(
@@ -163,8 +164,8 @@ impl DefinitionInfo {
         self.is_prelude
     }
 
-    pub fn file_id(&self) -> FileId {
-        self.file
+    pub fn location(&self) -> Location {
+        self.location
     }
 }
 
@@ -192,7 +193,7 @@ impl fmt::Display for DefinitionInfo {
             self.def_id,
             self.visibility,
             if self.is_prelude { " [prelude]" } else { "" },
-            self.file
+            self.location.file
         )
     }
 }
