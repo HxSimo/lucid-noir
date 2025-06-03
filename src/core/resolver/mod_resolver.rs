@@ -163,8 +163,8 @@ impl DefinitionInfo {
         self.is_prelude
     }
 
-    pub fn file_id(&self) -> &FileId {
-        &self.file
+    pub fn file_id(&self) -> FileId {
+        self.file
     }
 }
 
