@@ -1,15 +1,15 @@
-use noirc_frontend::{ParsedModule, ast::NoirFunction, parser::ItemKind};
+use fm::FileId;
 
-pub fn find_entry_point<'a>(
-    parsed_module: &'a ParsedModule,
-    entry_point_name: &String,
-) -> Option<&'a NoirFunction> {
-    for item in &parsed_module.items {
-        if let ItemKind::Function(func) = &item.kind {
-            if func.def.name.as_string() == entry_point_name {
-                return Some(func);
-            }
-        }
-    }
-    None
+use crate::core::resolver::mod_resolver::{DefinitionInfo, DefinitionKind, ModuleInfo};
+
+pub fn find_hir_entry_point<'a>(
+    modules: &'a [ModuleInfo],
+    entry_file_id: FileId,
+    entry_point_name: &str,
+) -> Option<&'a DefinitionInfo> {
+    modules
+        .iter()
+        .filter(|m| m.file_id() == entry_file_id)
+        .flat_map(|m| m.definitions())
+        .find(|d| d.name() == entry_point_name && matches!(d.kind(), DefinitionKind::Function))
 }

@@ -1,5 +1,5 @@
 use fm::{FileId, FileManager};
-use lucid_noir::core::{entry_point::find_entry_point, resolver::mod_resolver::{resolve_mods}};
+use lucid_noir::core::{entry_point::find_hir_entry_point, matcher::function::match_hir_ast_function, resolver::mod_resolver::resolve_mods};
 use std::{collections::HashMap, fs::File, path::Path};
 use walkdir::WalkDir;
 
@@ -62,12 +62,19 @@ fn main() {
     };
 
     let modules = resolve_mods(&context);
-    for module in modules {
+    for module in &modules {
         info!("{}", module);
     }
 
-    let _entry_point_fn = find_entry_point(parsed_module, &entry_point_name.to_string())
+    let entry_point_fn = find_hir_entry_point(&modules, entry_file_id, &entry_point_name.to_string())
         .unwrap_or_else(|| panic!("Entrypoint function '{}' not found", entry_point_name));
+
+    let ast_entry_point = match_hir_ast_function(parsed_module, entry_point_fn);
+
+    info!("{:?}", ast_entry_point);
+    
+       
+
 }
 
 fn setup_fm_from_path(project_root: &Path) -> FileManager {
